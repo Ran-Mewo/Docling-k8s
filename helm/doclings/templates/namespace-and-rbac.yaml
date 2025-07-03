@@ -1,12 +1,20 @@
-{{- $namespace := .Values.namespace | default .Release.Namespace -}}
-
+{{- if and .Values.namespace.create .Values.namespace.name }}
 ---
-{{- if .Values.serviceAccount.create -}}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ include "doclings.namespace" . }}
+  labels:
+    name: {{ include "doclings.namespace" . }}
+{{- end }}
+
+{{- if .Values.serviceAccount.create }}
+---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: {{ include "doclings.serviceAccountName" . }}
-  namespace: {{ $namespace }}
+  namespace: {{ include "doclings.namespace" . }}
   labels:
     {{- include "doclings.labels" . | nindent 4 }}
   {{- with .Values.serviceAccount.annotations }}

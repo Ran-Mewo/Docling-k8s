@@ -156,6 +156,39 @@ resources:
 helm install doclings helm/doclings --set replicaCount=3
 ```
 
+### Namespace Configuration
+
+**Default behavior** (uses release namespace, no namespace creation):
+```bash
+helm install doclings helm/doclings
+```
+
+**Create and use a custom namespace**:
+```bash
+helm install doclings helm/doclings \
+  --set namespace.name=doclings \
+  --set namespace.create=true
+```
+
+**Install in existing custom namespace without creating it**:
+```bash
+helm install doclings helm/doclings \
+  --namespace existing-namespace \
+  --set namespace.create=false
+```
+
+**Explicitly disable namespace creation** (useful when namespace already exists):
+```bash
+helm install doclings helm/doclings \
+  --set namespace.name=my-existing-namespace \
+  --set namespace.create=false
+```
+
+**Install in specific namespace with Helm's --namespace flag**:
+```bash
+helm install doclings helm/doclings --namespace my-namespace --create-namespace
+```
+
 ## 🗑️ Cleanup
 
 **Single YAML**: `kubectl delete -f deploy.yaml`

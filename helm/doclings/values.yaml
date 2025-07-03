@@ -9,6 +9,10 @@
 # helm install doclings . --set ingress.hosts[0].host=doclings.mydomain.com
 # helm install doclings . --set service.type=LoadBalancer --set ingress.enabled=false
 
+# Name overrides
+nameOverride: ""
+fullnameOverride: ""
+
 # Image configuration
 image:
   repository: quay.io/docling-project/docling-serve
@@ -111,8 +115,14 @@ tolerations: []
 # Affinity
 affinity: {}
 
-# Namespace (leave empty to use release namespace)
-namespace: ""
+# Namespace configuration
+namespace:
+  # Name of the namespace (leave empty to use release namespace)
+  # Only set this if you want to create a custom namespace
+  name: ""
+  # Whether to create the namespace (only works when name is specified)
+  # Set to false if namespace already exists or using default/release namespace
+  create: false
 
 # Service account
 serviceAccount:

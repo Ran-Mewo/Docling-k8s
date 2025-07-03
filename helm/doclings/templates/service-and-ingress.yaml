@@ -1,11 +1,9 @@
-{{- $namespace := .Values.namespace | default .Release.Namespace -}}
-
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: {{ include "doclings.fullname" . }}
-  namespace: {{ $namespace }}
+  namespace: {{ include "doclings.namespace" . }}
   labels:
     {{- include "doclings.labels" . | nindent 4 }}
 spec:
@@ -24,7 +22,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ include "doclings.fullname" . }}
-  namespace: {{ $namespace }}
+  namespace: {{ include "doclings.namespace" . }}
   labels:
     {{- include "doclings.labels" . | nindent 4 }}
   {{- with .Values.ingress.annotations }}

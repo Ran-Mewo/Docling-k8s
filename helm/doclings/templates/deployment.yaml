@@ -1,9 +1,9 @@
-{{- $namespace := .Values.namespace | default .Release.Namespace -}}
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "doclings.fullname" . }}
-  namespace: {{ $namespace }}
+  namespace: {{ include "doclings.namespace" . }}
   labels:
     {{- include "doclings.labels" . | nindent 4 }}
 spec:
