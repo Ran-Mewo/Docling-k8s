@@ -1,0 +1,21 @@
+apiVersion: v2
+name: doclings
+description: Doclings document processing service for Kubernetes
+type: application
+version: 1.0.0
+appVersion: "latest"
+home: https://github.com/DS4SD/docling
+sources:
+  - https://github.com/DS4SD/docling
+  - https://quay.io/repository/docling-project/docling-serve
+keywords:
+  - document
+  - processing
+  - pdf
+  - extraction
+  - ai
+maintainers:
+  - name: Telstra
+    url: https://github.com/Telstra
+annotations:
+  licenses: MIT

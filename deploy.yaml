@@ -1,0 +1,173 @@
+# Doclings Complete Deployment - Single File
+# Apply with: kubectl apply -f deploy.yaml
+#
+# External Access Options:
+# 1. Ingress (default): Configure your domain in the Ingress section below
+# 2. LoadBalancer: Uncomment the LoadBalancer service at the bottom
+# 3. Port-forward (dev only): kubectl port-forward -n doclings svc/doclings 5001:5001
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: doclings
+  labels:
+    name: doclings
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: doclings-config
+  namespace: doclings
+data:
+  DOCLING_SERVE_ENABLE_UI: "true"
+  # Add any additional Doclings configuration here
+  # DOCLING_SERVE_HOST: "0.0.0.0"
+  # DOCLING_SERVE_PORT: "5001"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: doclings
+  namespace: doclings
+  labels:
+    app: doclings
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: doclings
+  template:
+    metadata:
+      labels:
+        app: doclings
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+      - name: doclings
+        image: quay.io/docling-project/docling-serve:latest
+        ports:
+        - containerPort: 5001
+          name: http
+        envFrom:
+        - configMapRef:
+            name: doclings-config
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 5001
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 5001
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+            - ALL
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: doclings
+  namespace: doclings
+  labels:
+    app: doclings
+spec:
+  selector:
+    app: doclings
+  ports:
+  - port: 5001
+    targetPort: 5001
+    name: http
+  type: ClusterIP
+
+---
+# Optional: Ingress for external access
+# Uncomment and configure for your environment
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: doclings-lb
+#   namespace: doclings
+#   labels:
+#     app: doclings
+# spec:
+#   selector:
+#     app: doclings
+#   ports:
+#   - port: 5001
+#     targetPort: 5001
+#     name: http
+#   type: LoadBalancer
+
+## Ingress for external access - CONFIGURE YOUR DOMAIN
+#apiVersion: networking.k8s.io/v1
+#kind: Ingress
+#metadata:
+#  name: doclings
+#  namespace: doclings
+#  annotations:
+#    nginx.ingress.kubernetes.io/rewrite-target: /
+#    # Uncomment for HTTPS with cert-manager:
+#    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+#spec:
+#  # Uncomment for HTTPS:
+#  # tls:
+#  # - hosts:
+#  #   - doclings.yourdomain.com
+#  #   secretName: doclings-tls
+#  rules:
+#    - host: doclings.yourdomain.com  # CHANGE THIS TO YOUR DOMAIN
+#      http:
+#        paths:
+#          - path: /
+#            pathType: Prefix
+#            backend:
+#              service:
+#                name: doclings
+#                port:
+#                  number: 5001
+#
+#---
+## Alternative: LoadBalancer service for direct external IP access
+## Uncomment if you prefer LoadBalancer over Ingress
+## apiVersion: v1
+## kind: Service
+## metadata:
+##   name: doclings-lb
+##   namespace: doclings
+##   labels:
+##     app: doclings
+## spec:
+##   selector:
+##     app: doclings
+##   ports:
+##   - port: 5001
+##     targetPort: 5001
+##     name: http
+##   type: LoadBalancer
+

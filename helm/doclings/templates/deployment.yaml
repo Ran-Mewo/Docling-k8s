@@ -1,0 +1,76 @@
+{{- $namespace := .Values.namespace | default .Release.Namespace -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "doclings.fullname" . }}
+  namespace: {{ $namespace }}
+  labels:
+    {{- include "doclings.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "doclings.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "doclings.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- if .Values.serviceAccount.create }}
+      serviceAccountName: {{ include "doclings.serviceAccountName" . }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.securityContext | nindent 8 }}
+      containers:
+      - name: doclings
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.service.targetPort }}
+          name: http
+        envFrom:
+        - configMapRef:
+            name: {{ include "doclings.fullname" . }}-config
+        {{- if .Values.storage.enabled }}
+        volumeMounts:
+        - name: storage
+          mountPath: {{ .Values.storage.mountPath }}
+        {{- end }}
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+        readinessProbe:
+          httpGet:
+            path: /
+            port: {{ .Values.service.targetPort }}
+          initialDelaySeconds: {{ .Values.healthCheck.readiness.initialDelaySeconds }}
+          periodSeconds: {{ .Values.healthCheck.readiness.periodSeconds }}
+          timeoutSeconds: {{ .Values.healthCheck.readiness.timeoutSeconds }}
+          failureThreshold: {{ .Values.healthCheck.readiness.failureThreshold }}
+        livenessProbe:
+          httpGet:
+            path: /
+            port: {{ .Values.service.targetPort }}
+          initialDelaySeconds: {{ .Values.healthCheck.liveness.initialDelaySeconds }}
+          periodSeconds: {{ .Values.healthCheck.liveness.periodSeconds }}
+          timeoutSeconds: {{ .Values.healthCheck.liveness.timeoutSeconds }}
+          failureThreshold: {{ .Values.healthCheck.liveness.failureThreshold }}
+        securityContext:
+          {{- toYaml .Values.containerSecurityContext | nindent 10 }}
+      {{- if .Values.storage.enabled }}
+      volumes:
+      - name: storage
+        persistentVolumeClaim:
+          claimName: {{ include "doclings.fullname" . }}-storage
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

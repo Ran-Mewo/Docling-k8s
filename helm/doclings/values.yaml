@@ -1,0 +1,121 @@
+# Doclings Helm Chart Values
+#
+# External Access Configuration:
+# 1. Ingress (default): Set your domain in ingress.hosts[0].host
+# 2. LoadBalancer: Change service.type to "LoadBalancer"
+# 3. NodePort: Change service.type to "NodePort" and set service.nodePort
+#
+# Examples:
+# helm install doclings . --set ingress.hosts[0].host=doclings.mydomain.com
+# helm install doclings . --set service.type=LoadBalancer --set ingress.enabled=false
+
+# Image configuration
+image:
+  repository: quay.io/docling-project/docling-serve
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+# Replica configuration
+replicaCount: 1
+
+# Service configuration
+service:
+  # Service type: ClusterIP, LoadBalancer, or NodePort
+  # ClusterIP: Internal cluster access only (requires Ingress for external access)
+  # LoadBalancer: Gets external IP from cloud provider
+  # NodePort: Exposes on all nodes (for development/testing)
+  type: ClusterIP
+  port: 5001
+  targetPort: 5001
+  # Uncomment for NodePort:
+  # nodePort: 30501
+
+# Ingress configuration - ENABLED BY DEFAULT for external access
+ingress:
+  enabled: true
+  className: ""
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    # Uncomment for HTTPS with cert-manager:
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: doclings.yourdomain.com  # CHANGE THIS TO YOUR DOMAIN
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+    # Uncomment for HTTPS:
+    # - secretName: doclings-tls
+    #   hosts:
+    #     - doclings.yourdomain.com
+
+# Doclings configuration
+config:
+  # Enable the web UI
+  enableUI: true
+  # Additional environment variables
+  extraEnv: {}
+    # DOCLING_SERVE_HOST: "0.0.0.0"
+    # DOCLING_SERVE_PORT: "5001"
+
+# Resource limits
+resources:
+  requests:
+    memory: "512Mi"
+    cpu: "250m"
+  limits:
+    memory: "2Gi"
+    cpu: "1000m"
+
+# Security context
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+# Container security context
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  capabilities:
+    drop:
+    - ALL
+
+# Health check configuration
+healthCheck:
+  readiness:
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+  liveness:
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+# Storage configuration (if needed for document processing cache)
+storage:
+  enabled: false
+  size: 5Gi
+  storageClass: ""
+  mountPath: /app/cache
+
+# Node selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity
+affinity: {}
+
+# Namespace (leave empty to use release namespace)
+namespace: ""
+
+# Service account
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
